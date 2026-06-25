@@ -21,14 +21,42 @@
 <body>
   <div class="card">
     <h1>Add your card on file</h1>
-    <p>To confirm your appointment at Rain Medi Spa &amp; Salon, please add a card. (Setup in progress.)</p>
+    <p id="status">Loading…</p>
     <div class="field"><span class="label">Customer ID</span><br><span class="val" id="cid">—</span></div>
-    <div class="field"><span class="label">Location</span><br><span class="val" id="loc">—</span></div>
+    <div class="field"><span class="label">Card setup status</span><br><span class="val" id="cstatus">—</span></div>
   </div>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    document.getElementById('cid').textContent = params.get('cid') || 'missing';
-    document.getElementById('loc').textContent = params.get('loc') || 'missing';
+    const SUPABASE_URL = "https://ijcfzgghwmpmyvhggpas.supabase.co";
+    const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqY2Z6Z2dod21wbXl2aGdncGFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjEwNzUsImV4cCI6MjA5Nzk5NzA3NX0.HQADESG-hIFyMHNHJS4tFt7ikvaDcAC0Aa6NOarwn78";
+
+    const t = new URLSearchParams(location.search).get("t");
+
+    async function load() {
+      if (!t) { document.getElementById("status").textContent = "Invalid link."; return; }
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_capture`, {
+          method: "POST",
+          headers: {
+            "apikey": ANON_KEY,
+            "Authorization": "Bearer " + ANON_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ p_token: t })
+        });
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) {
+          document.getElementById("status").textContent = "This link is invalid or expired.";
+          return;
+        }
+        const row = rows[0];
+        document.getElementById("status").textContent = "Link verified.";
+        document.getElementById("cid").textContent = row.booker_customer_id || "missing";
+        document.getElementById("cstatus").textContent = row.status || "—";
+      } catch (e) {
+        document.getElementById("status").textContent = "Something went wrong loading this page.";
+      }
+    }
+    load();
   </script>
 </body>
 </html>
